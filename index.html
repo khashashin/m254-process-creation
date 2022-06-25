@@ -51,22 +51,26 @@
                         "id": 1,
                         "activity": "Konzept",
                         "who": "Entwicklungsteam",
-                        "what": "Konzepte von SW-Komponenten erstellen."
+                        "what": "Konzepte von SW-Komponenten erstellen.",
+                        "disabled": true,
                     }, {
                         "id": 2,
                         "activity": "Entwicklung",
                         "who": "Entwicklungsteam",
-                        "what": "Komponenten entwickeln."
+                        "what": "Komponenten entwickeln.",
+                        "disabled": true,
                     }, {
                         "id": 3,
                         "activity": "Test",
                         "who": "Testteam",
-                        "what": "Komponenten testen."
+                        "what": "Komponenten testen.",
+                        "disabled": true,
                     }, {
                         "id": 4,
                         "activity": "Veröffentlichung",
                         "who": "Entwicklungsteam",
-                        "what": "Komponenten veröffentlichen."
+                        "what": "Komponenten veröffentlichen.",
+                        "disabled": false,
                     }],
                 };
             }
@@ -93,10 +97,25 @@
                 let activities = this.state.activities;
                 for (let i = 0; i < activities.length; i++) {
                     activities[i].id = i + 1;
+                    activities[i].disabled = true;
+                    // if it is the last activity, it is not disabled
+                    if (i === activities.length - 1) {
+                        activities[i].disabled = false;
+                    }
                 }
                 this.setState({
                     activities: activities
                 });
+            }
+
+            checkActivitiesForEmptyFields = async () => {
+                let activities = this.state.activities;
+                for (let i = 0; i < activities.length; i++) {
+                    if (activities[i].activity === '' || activities[i].who === '' || activities[i].what === '') {
+                        return false;
+                    }
+                }
+                return true;
             }
 
             render() {
@@ -167,6 +186,8 @@
                                                             width: '100%'
                                                         },
                                                         id: 'activity',
+                                                        className: 'form-control',
+                                                        disabled: activity.disabled,
                                                     })
                                                 ),
                                                 e('div', {
@@ -189,6 +210,8 @@
                                                             width: '100%'
                                                         },
                                                         id: 'who',
+                                                        className: 'form-control',
+                                                        disabled: activity.disabled,
                                                     })
                                                 ),
                                                 e('div', {
@@ -211,6 +234,8 @@
                                                             width: '100%'
                                                         },
                                                         id: 'what',
+                                                        className: 'form-control',
+                                                        disabled: activity.disabled,
                                                     })
                                                 )
                                             )
@@ -241,15 +266,24 @@
                                 type: 'button',
                                 className: 'btn btn-primary mb-2 mb-sm-0 mr-sm-2',
                                 onClick: () => {
-                                    this.state.activities.push({
-                                        "id": this.state.activities.length + 1,
-                                        "activity": "",
-                                        "who": "",
-                                        "what": ""
-                                    });
-                                    this.setState({
-                                        activities: this.state.activities
-                                    });
+                                    this.checkActivitiesForEmptyFields().then(
+                                        (result) => {
+                                            if (result) {
+                                                this.state.activities.push({
+                                                    "id": this.state.activities.length + 1,
+                                                    "activity": "",
+                                                    "who": "",
+                                                    "what": ""
+                                                });
+                                                this.setState({
+                                                    activities: this.state.activities
+                                                });
+                                                this.updateActivityIndexes();
+                                            } else {
+                                                alert('Bitte füllen Sie alle Felder aus!');
+                                            }
+                                        }
+                                    );
                                 }
                             }, 'Aktivität hinzufügen'),
                             e('button', {
