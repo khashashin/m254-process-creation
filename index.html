@@ -9,6 +9,7 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
         integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bs-stepper/dist/css/bs-stepper.min.css">
 
     <title>Prozess Beschreiben</title>
 </head>
@@ -38,11 +39,15 @@
         crossorigin="anonymous"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://cdn.jsdelivr.net/npm/bs-stepper/dist/js/bs-stepper.min.js"></script>
     <script>
         // ReactComponents
         const e = React.createElement;
 
         class ProcessForm extends React.Component {
+            stepper;
+            screen = 'desktop';
+
             constructor(props) {
                 super(props);
                 this.state = {
@@ -52,27 +57,47 @@
                         "activity": "Konzept",
                         "who": "Entwicklungsteam",
                         "what": "Konzepte von SW-Komponenten erstellen.",
-                        "disabled": true,
                     }, {
                         "id": 2,
                         "activity": "Entwicklung",
                         "who": "Entwicklungsteam",
                         "what": "Komponenten entwickeln.",
-                        "disabled": true,
                     }, {
                         "id": 3,
                         "activity": "Test",
                         "who": "Testteam",
                         "what": "Komponenten testen.",
-                        "disabled": true,
                     }, {
                         "id": 4,
                         "activity": "Veröffentlichung",
                         "who": "Entwicklungsteam",
                         "what": "Komponenten veröffentlichen.",
-                        "disabled": false,
                     }],
                 };
+            }
+
+            componentDidMount() {
+                setTimeout(() => {
+                    this.stepper = new Stepper(document.querySelector('.bs-stepper'));
+                }, 1000);
+
+                window.addEventListener('resize', () => {
+                    if (window.innerWidth < 768) {
+                        this.screen = 'mobile';
+                        this.forceUpdate();
+                    } else {
+                        this.screen = 'desktop';
+                        this.forceUpdate();
+                    }
+                });
+
+                if (window.innerWidth < 768) {
+                    this.screen = 'mobile';
+                    this.forceUpdate();
+                } else {
+                    this.screen = 'desktop';
+                    this.forceUpdate();
+                }
             }
 
             handleChange = (event) => {
@@ -97,11 +122,6 @@
                 let activities = this.state.activities;
                 for (let i = 0; i < activities.length; i++) {
                     activities[i].id = i + 1;
-                    activities[i].disabled = true;
-                    // if it is the last activity, it is not disabled
-                    if (i === activities.length - 1) {
-                        activities[i].disabled = false;
-                    }
                 }
                 this.setState({
                     activities: activities
@@ -120,99 +140,111 @@
 
             render() {
                 return e('div', {},
-                    e('h1', {}, this.state.processName),
-                    e('form', {},
+                    e('form', {
+
+                    }, e('div', {
+                        className: 'form-group row'
+                    },
+                        e('label', {
+                            htmlFor: 'processName',
+                            className: 'col-sm-2 col-form-label'
+                        }, 'Prozess Name'),
                         e('div', {
-                            className: 'form-group row'
+                            className: 'col-sm-10'
                         },
-                            e('label', {
-                                htmlFor: 'processName',
-                                className: 'col-sm-2 col-form-label'
-                            }, 'Prozess Name'),
-                            e('div', {
-                                className: 'col-sm-10'
-                            },
-                                e('input', {
-                                    type: 'text',
-                                    value: this.state.processName,
-                                    onChange: this.handleChange,
-                                    id: 'processName',
-                                    className: 'form-control',
-                                })
-                            )
-                        ),
-                        e('h4', {}, 'Aktivitäten'),
-                        e('ol', {
-                            className: 'list-group list-group-numbered'
+                            e('input', {
+                                type: 'text',
+                                value: this.state.processName,
+                                onChange: this.handleChange,
+                                id: 'processName',
+                                className: 'form-control',
+                            })
+                        )
+                    )),
+                    e('div', {
+                        className: this.screen === 'mobile' ? 'bs-stepper vertical' : 'bs-stepper'
+                    },
+                        e('div', {
+                            className: 'bs-stepper-header',
+                            role: 'tablist',
                         },
                             this.state.activities.map((activity, index) => {
-                                return e('li', {
-                                    className: 'list-group-item',
-                                    key: index
+                                const step = e('div', {
+                                    className: 'step',
+                                    key: index + 999,
+                                    'data-target': '#activity-' + activity.id,
+                                },
+                                    e('button', {
+                                        className: 'step-trigger',
+                                        role: 'tab',
+                                        type: 'button',
+                                        'aria-controls': 'activity-' + activity.id,
+                                        id: 'activity-' + activity.id + '-trigger',
+                                    },
+                                        e('span', {
+                                            className: 'bs-stepper-circle',
+                                        }, activity.id),
+                                        e('span', {
+                                            className: 'bs-stepper-label',
+                                        }, activity.activity),
+                                    )
+                                );
+                                const line = e('div', {
+                                    className: 'line',
+                                    key: index,
+                                });
+                                // if last activity, don't show line
+                                if (index !== this.state.activities.length - 1) {
+                                    return [step, line];
+                                } else {
+                                    return step;
+                                }
+                            })
+                        ),
+                        e('div', {
+                            className: 'bs-stepper-content'
+                        },
+                            this.state.activities.map((activity, index) => {
+                                return e('div', {
+                                    className: 'content fade',
+                                    key: index,
+                                    id: 'activity-' + activity.id,
+                                    role: 'tabpanel',
+                                    'aria-labelledby': 'activity-' + activity.id + '-trigger',
                                 },
                                     e('div', {
                                         className: 'row'
                                     },
-                                        e('div', {
-                                            className: 'col-12 col-sm-1'
-                                        },
-                                            e('span', {
-                                                className: 'badge badge-primary mb-2 mb-sm-0'
-                                            }, index + 1)
-                                        ),
-                                        e('div', {
-                                            className: 'col-12 col-sm-9'
+                                        e('form', {
+                                            className: 'col-12'
                                         },
                                             e('div', {
                                                 className: 'row'
                                             },
                                                 e('div', {
-                                                    className: 'col-12 col-sm-6 mb-2 mb-sm-0',
-                                                },
-                                                    e('label', {
-                                                        htmlFor: 'activity',
-                                                        className: 'col-form-label'
-                                                    }, 'Aktivität'),
-                                                    e('input', {
-                                                        type: 'text',
-                                                        value: activity.activity,
-                                                        onChange: (event) => {
-                                                            this.state.activities[index].activity = event.target.value;
-                                                            this.setState({
-                                                                activities: this.state.activities
-                                                            });
-                                                        },
-                                                        style: {
-                                                            width: '100%'
-                                                        },
-                                                        id: 'activity',
-                                                        className: 'form-control',
-                                                        disabled: activity.disabled,
-                                                    })
-                                                ),
-                                                e('div', {
-                                                    className: 'col-12 col-sm-6 mb-2 mb-sm-0',
+                                                    className: 'mb-3 col-12 pl-0 d-flex',
                                                 },
                                                     e('label', {
                                                         htmlFor: 'who',
-                                                        className: 'col-form-label'
-                                                    }, 'Wer'),
-                                                    e('input', {
-                                                        type: 'text',
-                                                        value: activity.who,
-                                                        onChange: (event) => {
-                                                            this.state.activities[index].who = event.target.value;
-                                                            this.setState({
-                                                                activities: this.state.activities
-                                                            });
-                                                        },
-                                                        style: {
-                                                            width: '100%'
-                                                        },
-                                                        id: 'who',
-                                                        className: 'form-control',
-                                                        disabled: activity.disabled,
-                                                    })
+                                                        className: 'col-2 col-form-label'
+                                                    }, 'Verantwortlich:'),
+                                                    e('div', {
+                                                        className: 'col-10'
+                                                    },
+                                                        e('input', {
+                                                            type: 'text',
+                                                            value: activity.who,
+                                                            onChange: (event) => {
+                                                                this.state.activities[index].who = event.target.value;
+                                                                this.setState({
+                                                                    activities: this.state.activities
+                                                                });
+                                                            },
+                                                            id: 'who',
+                                                            className: 'form-control-plaintext',
+                                                            readOnly: true,
+                                                        })
+                                                    ),
                                                 ),
                                                 e('div', {
                                                     className: 'col-12'
@@ -220,7 +252,7 @@
                                                     e('label', {
                                                         htmlFor: 'what',
                                                         className: 'col-form-label'
-                                                    }, 'Was'),
+                                                    }, 'Aufgabe'),
                                                     e('textarea', {
                                                         type: 'text',
                                                         value: activity.what,
@@ -235,65 +267,52 @@
                                                         },
                                                         id: 'what',
                                                         className: 'form-control',
-                                                        disabled: activity.disabled,
                                                     })
-                                                )
+                                                ),
+                                                e('div', {
+                                                    className: 'col-12 mt-2 d-flex justify-content-end'
+                                                },
+                                                    e('button', {
+                                                        // show "previous" button if it is not the first activity
+                                                        style: {
+                                                            display: index === 0 ? 'none' : 'block',
+                                                            marginRight: '10px'
+                                                        },
+                                                        className: 'btn btn-primary',
+                                                        onClick: (event) => {
+                                                            event.preventDefault();
+                                                            this.stepper.previous();
+                                                        }
+                                                    }, 'Zurück'),
+                                                    e('button', {
+                                                        // show "next" button if it is not the last activity
+                                                        style: {
+                                                            display: index !== this.state.activities.length - 1 ? 'block' : 'none'
+                                                        },
+                                                        className: 'btn btn-primary',
+                                                        onClick: (event) => {
+                                                            event.preventDefault();
+                                                            this.stepper.next();
+                                                        }
+                                                    }, 'Weiter'),
+                                                    e('button', {
+                                                        style: {
+                                                            display: index !== this.state.activities.length - 1 ? 'none' : 'block'
+                                                        },
+                                                        className: 'btn btn-primary',
+                                                        onClick: (event) => {
+                                                            this.handleChange(event);
+                                                        }
+                                                    }, 'Exportieren'),
+                                                ),
                                             )
-                                        ),
-                                        e('div', {
-                                            className: 'col-sm-2'
-                                        },
-                                            e('button', {
-                                                type: 'button',
-                                                className: 'btn btn-danger',
-                                                onClick: () => {
-                                                    this.state.activities.splice(index, 1);
-                                                    this.setState({
-                                                        activities: this.state.activities
-                                                    });
-                                                    this.updateActivityIndexes();
-                                                }
-                                            }, 'Löschen')
                                         )
                                     )
                                 );
                             })
-                        ),
-                        e('div', {
-                            className: 'mt-2 d-flex justify-content-end flex-column flex-sm-row'
-                        },
-                            e('button', {
-                                type: 'button',
-                                className: 'btn btn-primary mb-2 mb-sm-0 mr-sm-2',
-                                onClick: () => {
-                                    this.checkActivitiesForEmptyFields().then(
-                                        (result) => {
-                                            if (result) {
-                                                this.state.activities.push({
-                                                    "id": this.state.activities.length + 1,
-                                                    "activity": "",
-                                                    "who": "",
-                                                    "what": ""
-                                                });
-                                                this.setState({
-                                                    activities: this.state.activities
-                                                });
-                                                this.updateActivityIndexes();
-                                            } else {
-                                                alert('Bitte füllen Sie alle Felder aus!');
-                                            }
-                                        }
-                                    );
-                                }
-                            }, 'Aktivität hinzufügen'),
-                            e('button', {
-                                type: 'submit',
-                                className: 'btn btn-success',
-                                onClick: this.handleChange
-                            }, 'Prozess exportieren')
                         )
                     ),
-                );
+                )
             }
         }
     </script>
